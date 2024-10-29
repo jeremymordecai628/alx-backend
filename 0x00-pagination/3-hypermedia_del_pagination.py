@@ -1,21 +1,51 @@
 #!/usr/bin/env python3
 """
-Helper function to calculate pagination range
+Deletion-resilient hypermedia pagination
 """
 
-from typing import Tuple
+import csv
+import math
+from typing import List, Dict
 
-def index_range(page: int, page_size: int) -> Tuple[int, int]:
-    """
-    Calculate the start and end index for pagination.
+class Server:
+    """Server class to paginate a database of popular baby names."""
+    DATA_FILE = "Popular_Baby_Names.csv"
 
-    Args:
-        page (int): The current page number (1-indexed).
-        page_size (int): The number of items per page.
+    def __init__(self):
+        self.__dataset = None
+        self.__indexed_dataset = None
 
-    Returns:
-        tuple: A tuple containing the start and end index for the list.
-    """
-    start_index = (page - 1) * page_size
-    end_index = start_index + page_size
-    return (start_index, end_index)
+    def dataset(self) -> List[List]:
+        """Cached dataset."""
+        if self.__dataset is None:
+            with open(self.DATA_FILE) as f:
+                reader = csv.reader(f)
+                dataset = [row for row in reader]
+            self.__dataset = dataset[1:]  # Skip the header row
+
+        return self.__dataset
+
+    def indexed_dataset(self) -> Dict[int, List]:
+        """Dataset indexed by sorting position, starting at 0."""
+        if self.__indexed_dataset is None:
+            dataset = self.dataset()
+            self.__indexed_dataset = {i: dataset[i] for i in range(len(dataset))}
+        return self.__indexed_dataset
+
+    def get_hyper_index(self, index: int = None, page_size: int = 10) -> Dict:
+        """
+        Deletion-resilient method to retrieve a page from the dataset.
+        """
+        # Verify that index is within range
+        assert index is not None and 0 <= index < len(self.indexed_dataset()), "Index out of range"
+        
+        # Prepare the dataset as a list of available items after deletions
+        data = []
+        current_index = index
+        indexed_data = self.indexed_dataset()
+        
+        while len(data) < page_size and current_index < len(indexed_data):
+            # Only add to data if index exists in the dataset (to handle deletion)
+            if current_index in indexed_data:
+                data.append(indexed_data[current_index])
+            current_index +=
