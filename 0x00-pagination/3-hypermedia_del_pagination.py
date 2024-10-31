@@ -48,4 +48,15 @@ class Server:
             # Only add to data if index exists in the dataset (to handle deletion)
             if current_index in indexed_data:
                 data.append(indexed_data[current_index])
-            current_index +=
+            current_index += 1
+        
+        # Set the next index based on the current index traversal
+        next_index = current_index if current_index < len(indexed_data) else None
+
+        # Return the paginated data along with the required metadata
+        return {
+            "index": index,
+            "data": data,
+            "page_size": len(data),
+            "next_index": next_index
+        }
